@@ -1,0 +1,62 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="container">
+    <h2>Draw Winners</h2>
+    <form id="drawForm">
+        <div class="form-group">
+            <label for="numberOfWinners">Enter Number of Winners:</label>
+            <input type="number" class="form-control" id="numberOfWinners" name="numberOfWinners" required>
+            <span class="text-danger" id="numberOfWinnersError"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Draw</button>
+    </form>
+    <div id="winnersList" class="mt-3"></div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/party-js@latest/bundle/party.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#drawForm').submit(function (event) {
+                event.preventDefault();
+                var numberOfWinners = $('#numberOfWinners').val();
+
+                // Client-side validation: Ensure number of winners is greater than zero
+                if (numberOfWinners <= 0 || isNaN(numberOfWinners)) {
+                    $('#numberOfWinnersError').text('Number of winners must be greater than zero.');
+                    return;
+                } else {
+                    $('#numberOfWinnersError').text('');
+                }
+
+                $.post('/Home/DrawWinners', { numberOfWinners: numberOfWinners }, function (data) {
+                    var winnersList = '<h3>Winners:</h3>';
+                    winnersList += '<table class="table table-bordered">';
+                    winnersList += '<thead><tr><th>First Name</th><th>Last Name</th><th>Phone Number</th><th>Email</th></tr></thead><tbody>';
+                    data.forEach(function (winner) {
+                        winnersList += '<tr>';
+                        winnersList += '<td>' + winner.firstName + '</td>';
+                        winnersList += '<td>' + winner.lastName + '</td>';
+                        winnersList += '<td>' + winner.phoneNumber + '</td>';
+                        winnersList += '<td>' + winner.email + '</td>';
+                        winnersList += '</tr>';
+                    });
+                    winnersList += '</tbody></table>';
+                    $('#winnersList').html(winnersList);
+
+                    // Trigger the party animation
+                    party.confetti(document.querySelector('#winnersList'), {
+                        count: party.variation.range(50, 100)
+                    });
+                }).fail(function (response) {
+                    // Handle server-side validation errors
+                    var errorMessage = response.responseJSON.message;
+                    alert(errorMessage); // Display error message
+                });
+            });
+        });
+    </script>
+}
+
